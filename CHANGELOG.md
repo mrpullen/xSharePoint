@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* New resource: SPWebAppPropertyBag
 * Update SPSearchIndexPartition made ServiceAppName as a Key
 * New resouce: SPTrustedRootAuthority
 * Update SPFarmSolution to eject from loop after 30m.
