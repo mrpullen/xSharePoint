@@ -82,7 +82,6 @@ function Get-TargetResource
     
 }
 
-
 function Set-TargetResource
 {
     [CmdletBinding()]
@@ -142,6 +141,7 @@ function Set-TargetResource
             
             Add-SPAppPrincipalPermission -appPrincipal $appPrincipal -Site $web `
                                          -Scope $params.Scope -Level $params.Right
+                            }
     }
     if ($result.Ensure -eq "Absent" -and $Ensure -eq "Present") 
     {
