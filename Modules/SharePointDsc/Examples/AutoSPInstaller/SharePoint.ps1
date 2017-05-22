@@ -33,6 +33,25 @@ function Get-FarmAccount {
     }
 }
 
+function Get-SPCredential
+{
+    param(
+        [System.String]$Username,
+        [System.Security.SecureString]$Password = $null
+    )
+    
+    if($Password -eq $null)
+    {
+        $credential = Get-Credential -UserName "$($Username)" -Message "Provide Password"
+        return $credential
+    }
+    else
+    {
+        $credential = New-Object System.Management.Automation.PSCredential ("$($Username)", $Password)
+        return $credential
+    }   
+}
+
 function Get-Version {
      param([xml]$autoInstallerXML)
 
@@ -100,6 +119,7 @@ function Get-OnlineInstallMode {
     return ($autoInstallerXML.Configuration.Install.OfflineInstall -eq "false")
     
 }
+
 function Get-DBPrefixDatabaseName {
     param([string]$dbName)
 
@@ -112,6 +132,7 @@ function Get-DBPrefixDatabaseName {
     }
 
 }
+
 function Get-AdminContentDatabaseName {
     param([xml]$autoInstallerXML)
     $adminContentDb = "$($autoInstallerXML.Configuration.Farm.CentralAdmin.Database)"
@@ -127,9 +148,43 @@ function Get-ConfigDatabaseName {
    
 }
 
+function Get-SetupAccount {
+    param([xml]$autoInstallerXML)
+
+}
+
+function Get-ManagedAccounts {
+    param([xml]$autoInstallerXML)
+
+    $accounts = Configuration.Farm.ManagedAccounts.ManagedAccount;
+    $managedAccounts = @()
+    foreach($account in $accounts)
+    {
+        $passwordString = $account.Password
+        if($passwordString -eq "")
+        {
+            $passwordString = $null
+        }
+        $acct = Get-SPCredential -Username "$($account.Username)" -Password $passwordString
+        $managedAccount = @{
+            Name = $account.CommonName
+            AccountName = $account.Username
+            Account = $acct
+        }
+        $managedAccounts += $managedAccount;
+    }
+
+    return $managedAccounts
+}
+
 Configuration AutoInstallerExample {
     param (
-        [Parameter(Mandatory=$true)] [ValidateNotNullOrEmpty()] [xml]$autoInstallerXML
+        [Parameter(Mandatory = $true)]
+        [pscredential]
+        $SPSetupAccount,
+        [Parameter(Mandatory = $true)] 
+        [ValidateNotNullOrEmpty()] 
+        [xml]$autoInstallerXML
     )
 
 
@@ -151,6 +206,8 @@ Configuration AutoInstallerExample {
     $productKey = Get-ProductKey -autoInstallerXML $autoInstallerXML
     $onlineMode = Get-OnlineInstallMode -autoInstallerXML $autoInstallerXML
    
+    $managedAccounts = Get-ManagedAccounts -autoInstallerXML $autoInstallerXML
+
     node "localhost"
     {       
 
@@ -169,12 +226,12 @@ Configuration AutoInstallerExample {
             }
         }
 
-        #**********************************************************
+        <#**********************************************************
         # Install Binaries
         #
         # This section installs SharePoint and its Prerequisites
         # Not sure where the AutoSPInstaller stores this info for a local install modle
-        #**********************************************************
+        #**********************************************************#>
         
         
         SPInstallPrereqs InstallPrereqs {
@@ -197,19 +254,32 @@ Configuration AutoInstallerExample {
         # provisions generic services and components used by the
         # whole farm
         #**********************************************************
+        
+        SPFarm Farm
+        {
+            DatabaseServer           = "$($databaseServer)"
+            FarmConfigDatabaseName   = "$($configDatabaseName)"
+            Passphrase               = $passphrase
+            FarmAccount              = $farmAccount
+            PsDscRunAsCredential     = $SPSetupAccount
+            AdminContentDatabaseName = "$($adminContentDatabaseName)"
+            Ensure                   = "Present"
+            DependsOn                = "[SPInstall]InstallSharePoint"
+            ServerRole               = $serverRole
+            RunCentralAdmin          = $true
+        }
        
-      
-            SPCreateFarm CreateSPFarm
-            {
-                DatabaseServer           = "$($databaseServer)"
-                FarmConfigDatabaseName   = "$($configDatabaseName)"
-                Passphrase               = $passphrase
-                FarmAccount              = $farmAccount
-                PsDscRunAsCredential     = $SPSetupAccount
-                AdminContentDatabaseName = "$($adminContentDatabaseName)"
-                DependsOn                = "[SPInstall]InstallSharePoint"
-            }
        
+       foreach($managedAccount in $managedAccounts)
+       {
+           SPManagedAccount "$($managedAccount.Name)"
+           {
+               AccountName          = $managedAccount.UserName
+               Account              = $managedAccount.Account
+               PsDSCRunAsCredential = $SPSetupAccount 
+               DependsOn            = "[SPFarm]Farm"
+           }
+       }
         SPManagedAccount ServicePoolManagedAccount
         {
             AccountName          = $ServicePoolManagedAccount.UserName
@@ -436,6 +506,9 @@ $scriptpath = $MyInvocation.MyCommand.Path
 $path = Split-Path $scriptpath -Parent 
 $autoInstallerXMLPath = Join-Path $path "AutoInstallerInput.xml"
 [xml]$autoInstallerXML = Get-Content $autoInstallerXMLPath
+
+$cred = Get-Credential -Message "Setup Account"
+AutoInstallerExample -SPSetupAccount $cred -autoInstallerXML $autoInstallerXML
 
 ###ASutoInstallerExample -autoInstallerXML $autoInstallerXML 
 
