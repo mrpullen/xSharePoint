@@ -4,29 +4,29 @@ function Get-TargetResource
     [OutputType([System.Collections.Hashtable])]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $SetupFile,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.Boolean]
         $ShutdownServices,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [ValidateSet("mon","tue","wed","thu","fri","sat","sun")]
         [System.String[]]
         $BinaryInstallDays,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.String]
         $BinaryInstallTime,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [ValidateSet("Present","Absent")]
         [System.String]
         $Ensure = "Present",
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $InstallAccount
     )
@@ -96,7 +96,7 @@ function Get-TargetResource
         {
             throw "Error while converting language information: $language"
         }
-        
+
         # Extract English name of the language code
         if ($cultureInfo.EnglishName -match "(\w*,*\s*\w*) \(\w*\)")
         {
@@ -204,29 +204,29 @@ function Set-TargetResource
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidGlobalVars", "")]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $SetupFile,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.Boolean]
         $ShutdownServices,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [ValidateSet("mon","tue","wed","thu","fri","sat","sun")]
         [System.String[]]
         $BinaryInstallDays,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.String]
         $BinaryInstallTime,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [ValidateSet("Present","Absent")]
         [System.String]
         $Ensure = "Present",
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $InstallAccount
     )
@@ -253,7 +253,7 @@ function Set-TargetResource
         throw ("Setup file is blocked! Please use Unblock-File to unblock the file " + `
                "before continuing.")
     }
-    
+
     $now = Get-Date
     if ($BinaryInstallDays)
     {
@@ -365,32 +365,35 @@ function Set-TargetResource
             $searchServiceName = "OSearch16"
         }
 
-        $osearchSvc        = Get-Service -Name $searchServiceName 
-        $hostControllerSvc = Get-Service -Name "SPSearchHostController" 
+        $osearchSvc        = Get-Service -Name $searchServiceName
+        $hostControllerSvc = Get-Service -Name "SPSearchHostController"
 
         $result = Invoke-SPDSCCommand -Credential $InstallAccount `
                                       -ScriptBlock {
-            $searchPaused = $true
             $searchSAs = Get-SPEnterpriseSearchServiceApplication
             foreach ($searchSA in $searchSAs)
             {
-                $searchSA.Pause()
+                if ($searchSA.isPaused() -eq 0)
+                {
+                    $searchSA.Pause()
+                }
             }
         }
-        
-        if($osearchSvc.Status -eq "Running") 
-        { 
+        $searchPaused = $true
+
+        if($osearchSvc.Status -eq "Running")
+        {
             $osearchStopped = $true
             Set-Service -Name $searchServiceName -StartupType Disabled
-            $osearchSvc.Stop() 
-        } 
+            $osearchSvc.Stop()
+        }
 
-        if($hostControllerSvc.Status -eq "Running") 
+        if($hostControllerSvc.Status -eq "Running")
         {
             $hostControllerStopped = $true
-            Set-Service "SPSearchHostController" -StartupType Disabled 
-            $hostControllerSvc.Stop() 
-        } 
+            Set-Service "SPSearchHostController" -StartupType Disabled
+            $hostControllerSvc.Stop()
+        }
 
         $hostControllerSvc.WaitForStatus('Stopped','00:01:00')
 
@@ -414,7 +417,7 @@ function Set-TargetResource
     }
 
     Write-Verbose -Message "Beginning installation of the SharePoint update"
-    
+
     $result = Invoke-SPDSCCommand -Credential $InstallAccount `
                                   -Arguments $SetupFile `
                                   -ScriptBlock {
@@ -426,9 +429,10 @@ function Set-TargetResource
                                -PassThru
 
         # Error codes: https://aka.ms/installerrorcodes
-        switch ($setup.ExitCode) {
+        switch ($setup.ExitCode)
+        {
             0
-            {  
+            {
                 Write-Verbose -Message "SharePoint update binary installation complete."
             }
             17022
@@ -448,8 +452,8 @@ function Set-TargetResource
     if ($ShutdownServices)
     {
         Write-Verbose -Message "Restart stopped services"
-        Set-Service -Name "SPTimerV4" -StartupType Automatic 
-        Set-Service -Name "IISADMIN" -StartupType Automatic 
+        Set-Service -Name "SPTimerV4" -StartupType Automatic
+        Set-Service -Name "IISADMIN" -StartupType Automatic
 
         $timerSvc = Get-Service -Name "SPTimerV4"
         $timerSvc.Start()
@@ -459,35 +463,38 @@ function Set-TargetResource
                                   -Wait `
                                   -PassThru
 
-        $osearchSvc        = Get-Service -Name $searchServiceName 
-        $hostControllerSvc = Get-Service -Name "SPSearchHostController" 
+        $osearchSvc        = Get-Service -Name $searchServiceName
+        $hostControllerSvc = Get-Service -Name "SPSearchHostController"
 
-        # Ensuring Search Services were stopped by script before Starting" 
-        if($osearchStopped -eq $true) 
+        # Ensuring Search Services were stopped by script before Starting"
+        if($osearchStopped -eq $true)
         {
             Set-Service -Name $searchServiceName -StartupType Manual
             $osearchSvc.Start()
         }
 
         if($hostControllerStopped -eq $true)
-        { 
-            Set-Service "SPSearchHostController" -StartupType Automatic 
-            $hostControllerSvc.Start() 
-        } 
+        {
+            Set-Service "SPSearchHostController" -StartupType Automatic
+            $hostControllerSvc.Start()
+        }
 
-        # Resuming Search Service Application if paused### 
-        $result = Invoke-SPDSCCommand -Credential $InstallAccount `
-                                      -ScriptBlock {
-            if($searchPaused -eq $true)
-            {
+        if($searchPaused -eq $true)
+        {
+            # Resuming Search Service Application if paused###
+            $result = Invoke-SPDSCCommand -Credential $InstallAccount `
+                                        -ScriptBlock {
                 $searchSAs = Get-SPEnterpriseSearchServiceApplication
                 foreach ($searchSA in $searchSAs)
                 {
-                    $searchSA.Resume()
+                    if (($searchSA.IsPaused() -band 0x80) -ne 0)
+                    {
+                        $searchSA.Resume()
+                    }
                 }
             }
         }
-        
+
         Write-Verbose -Message "Services restarted."
     }
 }
@@ -498,29 +505,29 @@ function Test-TargetResource
     [OutputType([System.Boolean])]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $SetupFile,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.Boolean]
         $ShutdownServices,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [ValidateSet("mon","tue","wed","thu","fri","sat","sun")]
         [System.String[]]
         $BinaryInstallDays,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.String]
         $BinaryInstallTime,
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [ValidateSet("Present","Absent")]
         [System.String]
         $Ensure = "Present",
-        
-        [parameter(Mandatory = $false)]
+
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $InstallAccount
     )

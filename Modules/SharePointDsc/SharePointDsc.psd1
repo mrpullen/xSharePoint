@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.9.0.0'
+ModuleVersion = '2.4.0.0'
 
 # ID used to uniquely identify this module
 GUID = '6c1176a0-4fac-4134-8ca2-3fa8a21a7b90'
@@ -24,7 +24,7 @@ Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
 
 # Copyright statement for this module
-Copyright = '(c) 2015-2017 Microsoft Corporation. All rights reserved.'
+Copyright = '(c) 2015-2018 Microsoft Corporation. All rights reserved.'
 
 # Description of the functionality provided by this module
 Description = 'This DSC module is used to deploy and configure SharePoint Server 2013 and 2016, and covers a wide range of areas including web apps, service apps and farm configuration.'
@@ -128,9 +128,43 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = "
-* New resource: SPServiceIdentity
-"
-
+      * SPCacheAccounts
+        * Fixed issue where the Test method would fail if SetWebAppPolicy was set to
+          false.
+      * SPDistributedCacheService
+        * Updated resource to allow updating the cache size
+      * SPFarm
+        * Implemented ability to deploy Central Administration site to a server at a
+          later point in time
+      * SPInfoPathFormsServiceConfig
+        * Fixed issue with trying to set the MaxSizeOfUserFormState parameter
+      * SPProductUpdate
+        * Fixed an issue where the resource failed when the search was already paused
+      * SPProjectServerLicense
+        * Fixed issue with incorrect detection of the license
+      * SPSearchContentSource
+        * Fixed issue where the Get method returned a conversion error when the content
+          source contained just one address
+        * Fixed issue 840 where the parameter StartHour was never taken into account
+      * SPSearchServiceApp
+        * Fixed issue where the service account was not set correctly when the service
+          application was first created
+        * Fixed issue where the Get method throws an error when the service app wasn't
+          created properly
+      * SPSearchTopology
+        * Fixed issue where Get method threw an error when the specified service
+          application didn't exist yet.
+      * SPServiceAppSecurity
+        * Fixed issue where error was thrown when no permissions were set on the
+          service application
+      * SPShellAdmins
+        * Updated documentation to specify required permissions for successfully using
+          this resource
+      * SPTrustedIdentityTokenIssuerProviderRealms
+        * Fixed code styling issues
+      * SPUserProfileServiceApp
+        * Fixed code styling issues
+      "
     } # End of PSData hashtable
 
 } # End of PrivateData hashtable

@@ -1,5 +1,7 @@
 # Description
 
+**Type:** Common
+
 This resource is responsible for ensuring the installation of all SharePoint
 prerequisites. It makes use of the PrerequisiteInstaller.exe file that is part
 of the SharePoint binaries, and will install the required Windows features as
@@ -33,3 +35,13 @@ permissions as well as read access to the network location.
 It is *not recommended* to disable UAC for security reasons. The recommended
 approach is to copy the installation media to the local nodes first and
 then execute the installation from there.
+
+## Downloading prerequisites
+
+The SharePoint prerequisites can be downloaded from the following locations:
+
+SharePoint 2013:
+https://technet.microsoft.com/library/a88d3f72-7ac3-4f08-b302-c4ca0a796268%28v=office.16%29.aspx?#section5
+
+SharePoint 2016:
+https://technet.microsoft.com/en-us/library/cc262485(v=office.16).aspx#section5

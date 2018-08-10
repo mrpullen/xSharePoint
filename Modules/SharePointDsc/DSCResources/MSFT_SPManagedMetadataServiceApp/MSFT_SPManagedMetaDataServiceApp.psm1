@@ -4,36 +4,36 @@ function Get-TargetResource
     [OutputType([System.Collections.Hashtable])]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $Name,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $ProxyName,
 
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $ApplicationPool,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $DatabaseServer,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $DatabaseName,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String[]]
         $TermStoreAdministrators,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [ValidateSet("Present", "Absent")]
         [System.String]
         $Ensure = "Present",
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $ContentTypeHubUrl,
 
@@ -45,7 +45,7 @@ function Get-TargetResource
         [System.UInt32[]]
         $Languages,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $InstallAccount
     )
@@ -140,6 +140,10 @@ function Get-TargetResource
                 {
                     $hubUrl = $hubUrl.TrimEnd('/')
                 }
+                else
+                {
+                    $hubUrl = ""
+                }
             }
             catch [System.Exception]
             {
@@ -197,7 +201,7 @@ function Get-TargetResource
                 Ensure                  = "Present"
                 ApplicationPool         = $serviceApp.ApplicationPool.Name
                 DatabaseName            = $serviceApp.Database.Name
-                DatabaseServer          = $serviceApp.Database.Server.Name
+                DatabaseServer          = $serviceApp.Database.NormalizedDataSource
                 TermStoreAdministrators = $currentAdmins
                 ContentTypeHubUrl       = $hubUrl
                 DefaultLanguage         = $termStoreDefaultLanguage
@@ -214,36 +218,36 @@ function Set-TargetResource
     [CmdletBinding()]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $Name,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $ProxyName,
 
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $ApplicationPool,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $DatabaseServer,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $DatabaseName,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String[]]
         $TermStoreAdministrators,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [ValidateSet("Present", "Absent")]
         [System.String]
         $Ensure = "Present",
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $ContentTypeHubUrl,
 
@@ -255,7 +259,7 @@ function Set-TargetResource
         [System.UInt32[]]
         $Languages,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $InstallAccount
     )
@@ -281,7 +285,7 @@ function Set-TargetResource
             -Arguments ($PSBoundParameters, $pName) `
             -ScriptBlock {
             $params = $args[0]
-            $pName = $args[1]
+            $pName = $args[1    ]
 
             $newParams = @{
                 Name            = $params.Name
@@ -301,9 +305,7 @@ function Set-TargetResource
                 New-SPMetadataServiceApplicationProxy -Name $pName `
                     -ServiceApplication $app `
                     -DefaultProxyGroup `
-                    -ContentTypePushdownEnabled `
-                    -DefaultKeywordTaxonomy `
-                    -DefaultSiteCollectionTaxonomy
+                    -ContentTypePushdownEnabled
             }
         }
         $result = Get-TargetResource @PSBoundParameters
@@ -585,36 +587,36 @@ function Test-TargetResource
     [OutputType([System.Boolean])]
     param
     (
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $Name,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $ProxyName,
 
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $ApplicationPool,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $DatabaseServer,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $DatabaseName,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String[]]
         $TermStoreAdministrators,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [ValidateSet("Present", "Absent")]
         [System.String]
         $Ensure = "Present",
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.String]
         $ContentTypeHubUrl,
 
@@ -626,7 +628,7 @@ function Test-TargetResource
         [System.UInt32[]]
         $Languages,
 
-        [parameter(Mandatory = $false)]
+        [Parameter()]
         [System.Management.Automation.PSCredential]
         $InstallAccount
     )
