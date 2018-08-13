@@ -1,0 +1,17 @@
+[ClassVersion("1.0.0.0")]
+class MSFT_AudienceRuleComponent
+{
+    [Write, Description("The Left Content for the Audience Rule")] String LeftContent;
+    [Required, Description("The Operator for the Audience Rule"),ValueMap{"=",">",">=","<","<=","Contains","Reports Under", "<>", "Not Contains","AND","OR","(",")","Member of"}, Values{"=",">",">=","<","<=","Contains","Reports Under", "<>", "Not Contains","AND","OR","(",")","Member of"}] String Operator;
+    [Write, Description("The Right Content for the Audience Rule)] String RightContent;
+
+};
+[ClassVersion("1.0.0.0"), FriendlyName("SPAudience")]
+class MSFT_Audience : OMI_BaseResource
+{
+    [Key, Description("The url of Web Application you wish to apply the audience to")] String SiteUrl;
+    [Key, Description("Audience Name")] String Name;
+    [Write, Description("Audience Description)] String Description;
+    [Write, Description("A list of audience rules"), EmbeddedInstance("MSFT_SPAudienceRuleCompontent")] String Rules[];
+    [Write, Description("POWERSHELL 4 ONLY: The account to run this resource as, use PsDscRunAsCredential if using PowerShell 5"), EmbeddedInstance("MSFT_Credential")] String InstallAccount;
+};
